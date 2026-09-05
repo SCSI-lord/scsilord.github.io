@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<link rel="icon" href="weather.ico" type="image/x-icon">
+		<title>Mini Buienradar</title>
+		<style>
+			@media only screen and (max-width: 1080px) {
+				table{
+					min-width:100%;
+				}
+			}
+			select{
+				text-align:center;
+				background-color:#3a3944;
+				color:#fbfbfe;
+				font-weight:normal;
+				font-size:24pt;
+				border:none;
+			}
+			a.title{
+				cursor:grab;
+				font-size:26pt;
+				text-decoration:none;
+			}
+			body{
+				background-color:#1c1b22;
+				color:#fbfbfe;
+				cursor:default;
+				font-family:verdana,arial,times;
+				font-size:12pt;
+			}
+			img{
+				min-width:100%;
+			}
+			small.title{
+				font-size:12pt;
+				margin-left:1em;
+				text-align:right;
+			}
+			span.title{
+				text-align:left;
+				font-size:32pt;
+			}
+			table{
+				max-height:100%;
+				margin: auto;
+				background-color:#2b2a33;
+				border:#bfbfc9 solid;
+				border-right:#cfcfd8 solid;
+				border-bottom:#cfcfd8 solid;
+				font-size:24pt;
+				text-align:center;
+			}
+			td{
+				padding:0px 1em 0px 1em;
+				background-color:#2b2a33;
+				font-weight:normal;
+			}
+			#map{
+				padding:0px 0em 0px 0em;
+			}
+			th{
+				padding:0px 1em 0px 1em;
+				background-color:#3a3944;
+				font-weight:normal;
+			}
+			th.title{
+				display: flex;
+				justify-content: space-between;
+				border-bottom:#cfcfd8 solid;
+			}
+		</style>
+	</head>
+	<body>
+		<table>
+			<tr>
+				<th class="title"><span class="title">Mini buienradar <a class="title" onClick="location.reload()">&#8635;</a></span><small class="title">Versie: Juni 2026</small></th>
+			</tr>
+			<tr>
+				<td id="map"></td>
+			</tr>
+			<tr>
+ 				<th><select id="wsname" name="Weerstations" onChange="changeStation()" ><option selected disabled="true">Kies een meetstation</option></select></th>
+			</tr>
+			<tr>
+				<td><span id="wdesc">Geen omschrijving gevonden</span></td>
+			</tr>
+			<tr>
+				<th>🌡️<span id="airtemp">??.?</span>&#8451; - 🪨<span id="grtemp">??.?</span>&#8451; - 🖐️<span id="feeltemp">??.?</span>&#8451; - 💦<span id="wetness">??.?</span>%</th>
+			</tr>
+			<tr>
+				<td>🌧️<span id="rainnow">??.?</span>mm - 🕐<span id="rainhour">??.?</span>mm - 📅<span id="rain24hour">??.?</span>mm</td>
+			</tr>
+			<tr>
+				<th>🍃<span id="windspd">??.?</span>KM/h(<span id="windbft">?.?</span>Bft) - 💨<span id="gusts">??.?</span>KM/h</th>
+			</tr>
+			<tr>
+				<td>🍃🧭<span id="winddir">???</span>&deg;(<span id="windcard">?</span>) - 🗜️<span id="pressure">???</span> hPa</td>
+			</tr>
+			<tr>
+				<th>☀️⬆️<span id="sunUp">??:??:??</span> - 🔌<span id="sunPwr">???</span>W/m<sup>2</sup> - ⬇️<span id="sunSet">??:??:??</span></th>
+			</tr>
+			<tr>
+				<td>👀<span id="viewdist">?</span>M</td>
+			</tr>
+		</table>
+		<script>
+			let wsid = new URLSearchParams(window.location.search).get('station');
+			if (wsid == null){wsid = 6280;}//default ID Groningen.
+			let set = (id, value) => document.getElementById(id).innerText = value;
+			const brUrl = 'https://data.buienradar.nl/2.0/feed/json';//URL voor JSON bestand met weerinformatie.
+			document.getElementById('wdesc').innerHTML = ''.concat('<a href="',brUrl,'">bekijk de JSON hier.</a>');
+
+			async function changeStation() {
+				let wsnames = document.getElementById('wsname');
+				window.location.search = '?station='+wsnames[wsnames.selectedIndex].value;
+			}
+
+			async function vulGegevens() {
+				let wsnames = document.getElementById('wsname');
+				let setact = 0;
+				document.getElementById('map').innerHTML = '<img src="http://api.buienradar.nl/image/1.0/RadarMapNL"alt="Buienradar Nederland"/>';
+				const resp = await fetch(new Request(brUrl));
+				const brJson = await resp.text();
+					if (brJson) {
+					let selindex = 1;
+					let now = JSON.parse(brJson).actual;
+					let wsCurDat = now.stationmeasurements;
+					for (var i = 0; i < wsCurDat.length; i++){
+						let opt = document.createElement('option');
+						opt.value = wsCurDat[i].stationid;
+						opt.innerHTML = wsCurDat[i].stationname + ' - ' + wsCurDat[i].timestamp.split('T')[1];
+						if (wsCurDat[i].stationid == wsid){
+							selindex = i+1;
+							let ws = wsCurDat[i];
+							set('wdesc', ws.weatherdescription);
+							set('airtemp', ws.temperature);
+							set('grtemp', ws.groundtemperature);
+							set('feeltemp', ws.feeltemperature);
+							set('wetness', ws.humidity);
+							set('rainnow', ws.precipitation);
+							set('rainhour', ws.rainFallLastHour);
+							set('rain24hour', ws.rainFallLast24Hour);
+							set('windspd', Math.round(ws.windspeed*3.6));
+							set('windbft', ws.windspeedBft);
+							set('gusts', Math.round(ws.windgusts*3.6));
+							set('winddir', ws.winddirectiondegrees);
+							set('windcard', ws.winddirection);
+							set('pressure', ws.airpressure);
+							set('sunUp', now.sunrise.split('T')[1]);
+							set('sunPwr', ws.sunpower);
+							set('sunSet', now.sunset.split('T')[1]);
+							set('viewdist', ws.visibility);
+						}
+						wsnames.add(opt);
+					}
+					wsnames.selectedIndex = selindex;
+				}
+			}
+			vulGegevens();
+		</script>
+	</body>
+</html>
