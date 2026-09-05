@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<link rel="icon" href="weather.ico" type="image/x-icon">
@@ -120,7 +120,7 @@
 			async function vulGegevens() {
 				let wsnames = document.getElementById('wsname');
 				let setact = 0;
-				document.getElementById('map').innerHTML = '<img src="http://api.buienradar.nl/image/1.0/RadarMapNL"alt="Buienradar Nederland"/>';
+				document.getElementById('map').innerHTML = '<img src="https://api.buienradar.nl/image/1.0/RadarMapNL"alt="Buienradar Nederland"/>';
 				const resp = await fetch(new Request(brUrl));
 				const brJson = await resp.text();
 					if (brJson) {
